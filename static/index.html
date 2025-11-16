@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI音频生成系统 - GPT-SoVITS版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 15px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            align-items: start;
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            width: 100%;
+            box-sizing: border-box;
+            height: fit-content;
+        }
+        
+        .right-column .card textarea {
+            min-height: 120px;
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        
+        form {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .drop-zone {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone:hover {
+            background: #e9ecef;
+            border-color: #764ba2;
+        }
+        
+        .drop-zone.drag-over {
+            background: #667eea15;
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone p {
+            margin: 0;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-row .form-group {
+            margin-bottom: 0;
+            min-width: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        input[type="text"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .param-group {
+            margin-bottom: 15px;
+        }
+        
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .param-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .param-value {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1em;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: none;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .param-hint {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+        
+        .param-hint.recommendation {
+            color: #28a745;
+            font-weight: 500;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.85em;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .audio-player {
+            margin-top: 10px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .speaker-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .speaker-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        
+        .speaker-item h3 {
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 1em;
+        }
+        
+        .speaker-item p {
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-top: 10px;
+            width: auto;
+        }
+        
+        .train-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-top: 10px;
+            margin-right: 5px;
+            width: auto;
+        }
+        
+        .train-btn:disabled {
+            background: #6c757d;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        
+        .status-untrained {
+            background: #ffc107;
+            color: #856404;
+        }
+        
+        .status-training {
+            background: #17a2b8;
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .status-trained {
+            background: #28a745;
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .info-text {
+            font-size: 0.75em;
+            color: #6c757d;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        
+        /* 响应式布局 */
+        @media (max-width: 1200px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI音频生成系统 - GPT-SoVITS版</h1>
+        
+        <div class="grid-container">
+            <!-- 左列 -->
+            <div class="left-column">
+                <!-- 上传音频样本 -->
+                <div class="card">
+                    <h2>上传音频样本</h2>
+                    <form id="uploadForm">
+                        <div class="form-group">
+                            <label for="speakerName">说话者名称</label>
+                            <input type="text" id="speakerName" name="speakerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="audioFiles">音频文件</label>
+                            <div id="dropZone" class="drop-zone">
+                                <p>拖放音频文件到此处</p>
+                                <p style="font-size: 0.85em; margin-top: 5px;">或点击选择文件</p>
+                                <input type="file" id="audioFiles" name="audioFiles" accept="audio/*" multiple required style="display: none;">
+                            </div>
+                        </div>
+                        <button type="submit" id="uploadBtn">上传音频样本</button>
+                        <div id="fileList" style="margin-top: 8px; font-size: 0.8em; color: #666;"></div>
+                    </form>
+                    <div class="loading" id="uploadLoading">
+                        <div class="spinner"></div>
+                        <p>正在处理音频...</p>
+                    </div>
+                    <div class="message" id="uploadMessage"></div>
+                </div>
+                
+                <!-- 训练参数设置 & 说话者列表 -->
+                <div class="card">
+                    <h2>训练参数与说话者管理</h2>
+                    
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">训练轮数 (Epochs)</span>
+                            <span class="param-value" id="epochsValue">8</span>
+                        </div>
+                        <input type="range" id="epochsSlider" min="5" max="20" value="8" step="1" 
+                               oninput="updateEpochsValue(this.value)">
+                    </div>
+                    
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">批次大小 (Batch Size)</span>
+                            <span class="param-value" id="batchSizeValue">4</span>
+                        </div>
+                        <input type="range" id="batchSizeSlider" min="2" max="8" value="4" step="1" 
+                               oninput="updateBatchSizeValue(this.value)">
+                    </div>
+                    
+                    <hr style="margin: 20px 0; border: none; border-top: 2px solid #e0e0e0;">
+                    
+                    <h3 style="color: #667eea; margin-bottom: 15px; font-size: 1.1em;">说话者列表</h3>
+                    <div class="speaker-list" id="speakerList">
+                        <p>暂无说话者数据</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右列：生成音频 -->
+            <div class="right-column">
+                <div class="card">
+                    <h2>生成音频</h2>
+                    <form id="generateForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="generateSpeaker">选择说话者</label>
+                                <select id="generateSpeaker" name="generateSpeaker" required>
+                                    <option value="">请先上传音频语料</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="language">语言</label>
+                                <select id="language" name="language">
+                                    <option value="zh-cn">中文</option>
+                                    <option value="en">英文</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="textInput">输入要转换的文字</label>
+                            <textarea id="textInput" name="textInput" required></textarea>
+                        </div>
+                        <button type="submit">生成音频</button>
+                    </form>
+                    <div class="loading" id="generateLoading">
+                        <div class="spinner"></div>
+                        <p>正在生成音频...</p>
+                    </div>
+                    <div class="message" id="generateMessage"></div>
+                    <audio class="audio-player" id="audioPlayer" controls style="display:none;"></audio>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 拖拽上传功能
+        const dropZone = document.getElementById('dropZone');
+        const audioFilesInput = document.getElementById('audioFiles');
+        const fileListDiv = document.getElementById('fileList');
+        
+        // 点击拖拽区域打开文件选择
+        dropZone.addEventListener('click', () => {
+            audioFilesInput.click();
+        });
+        
+        // 阻止默认拖拽行为
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+        
+        // 拖拽进入时高亮
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-over');
+            });
+        });
+        
+        // 拖拽离开时取消高亮
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-over');
+            });
+        });
+        
+        // 处理文件放置
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            audioFilesInput.files = files;
+            displayFileList(files);
+        });
+        
+        // 显示选择的文件列表
+        audioFilesInput.addEventListener('change', (e) => {
+            displayFileList(e.target.files);
+        });
+        
+        // 显示文件列表的函数
+        function displayFileList(files) {
+            if (files.length === 0) {
+                fileListDiv.innerHTML = '';
+                return;
+            }
+            
+            let fileListHTML = `<strong>已选择 ${files.length} 个文件：</strong><br>`;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const sizeKB = (file.size / 1024).toFixed(1);
+                fileListHTML += `${file.name} (${sizeKB} KB)<br>`;
+            }
+            fileListDiv.innerHTML = fileListHTML;
+        }
+        
+        // 批量上传音频
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const files = document.getElementById('audioFiles').files;
+            const speakerName = document.getElementById('speakerName').value;
+            
+            if (files.length === 0) {
+                alert('请至少选择一个音频文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            // 添加所有选择的文件
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            formData.append('speaker_name', speakerName);
+            
+            const messageDiv = document.getElementById('uploadMessage');
+            const loadingDiv = document.getElementById('uploadLoading');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            messageDiv.className = 'message';
+            loadingDiv.classList.add('show');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = `正在上传 ${files.length} 个文件...`;
+            
+            try {
+                const response = await fetch('/upload_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loadingDiv.classList.remove('show');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传音频样本';
+                
+                if (data.status === 'success') {
+                    let message = data.message;
+                    
+                    // 显示详细信息
+                    if (data.uploaded_files && data.uploaded_files.length > 0) {
+                        message += '\n\n成功上传的文件：';
+                        data.uploaded_files.forEach(file => {
+                            message += `\n${file.filename} (${file.duration.toFixed(1)}秒)`;
+                        });
+                    }
+                    
+                    if (data.failed_files && data.failed_files.length > 0) {
+                        message += '\n\n上传失败的文件：';
+                        data.failed_files.forEach(file => {
+                            message += `\n${file.filename}: ${file.error}`;
+                        });
+                    }
+                    
+                    messageDiv.textContent = message;
+                    messageDiv.className = 'message success show';
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileList').innerHTML = '';
+                    loadSpeakers(); // 刷新说话者列表
+                } else {
+                    throw new Error(data.detail || '上传失败');
+                }
+            } catch (error) {
+                loadingDiv.classList.remove('show');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传音频样本';
+                messageDiv.textContent = '错误: ' + error.message;
+                messageDiv.className = 'message error show';
+            }
+        });
+        
+        // 生成音频
+        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('text', document.getElementById('textInput').value);
+            formData.append('speaker_name', document.getElementById('generateSpeaker').value);
+            formData.append('language', document.getElementById('language').value);
+            
+            const messageDiv = document.getElementById('generateMessage');
+            const loadingDiv = document.getElementById('generateLoading');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            messageDiv.className = 'message';
+            loadingDiv.classList.add('show');
+            audioPlayer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/generate_audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loadingDiv.classList.remove('show');
+                
+                if (data.status === 'success') {
+                    messageDiv.textContent = data.message;
+                    messageDiv.className = 'message success show';
+                    
+                    // 播放生成的音频
+                    audioPlayer.src = data.audio_url;
+                    audioPlayer.style.display = 'block';
+                    audioPlayer.load();
+                } else {
+                    throw new Error(data.detail || '生成失败');
+                }
+            } catch (error) {
+                loadingDiv.classList.remove('show');
+                messageDiv.textContent = '错误: ' + error.message;
+                messageDiv.className = 'message error show';
+            }
+        });
+        
+        // 加载说话者列表
+        async function loadSpeakers() {
+            try {
+                const response = await fetch('/list_speakers');
+                const data = await response.json();
+                
+                const speakerList = document.getElementById('speakerList');
+                const speakerSelect = document.getElementById('generateSpeaker');
+                
+                if (data.speakers.length === 0) {
+                    speakerList.innerHTML = '<p>暂无说话者数据</p>';
+                    speakerSelect.innerHTML = '<option value="">请先上传音频语料</option>';
+                } else {
+                    // 更新列表显示
+                    speakerList.innerHTML = data.speakers.map(speaker => {
+                        let statusBadge = '';
+                        let trainButton = '';
+                        
+                        if (speaker.trained) {
+                            statusBadge = '<span class="status-badge status-trained">已训练</span>';
+                            trainButton = `<button class="train-btn" onclick="trainSpeaker('${speaker.name}')" disabled>已完成训练</button>`;
+                        } else if (speaker.audio_count >= 3) {
+                            statusBadge = '<span class="status-badge status-untrained">未训练</span>';
+                            trainButton = `<button class="train-btn" onclick="trainSpeaker('${speaker.name}')">开始训练</button>`;
+                        } else {
+                            statusBadge = '<span class="status-badge status-untrained">需更多样本</span>';
+                            trainButton = `<button class="train-btn" disabled>需要至少3个音频</button>`;
+                        }
+                        
+                        const trainedTime = speaker.trained_at ? 
+                            `<p>训练时间: ${new Date(speaker.trained_at).toLocaleString()}</p>` : '';
+                        
+                        return `
+                            <div class="speaker-item" id="speaker-${speaker.name}">
+                                <h3>${speaker.name}</h3>
+                                <p>音频数量: ${speaker.audio_count}</p>
+                                ${statusBadge}
+                                ${trainedTime}
+                                <div style="margin-top: 10px;">
+                                    ${trainButton}
+                                    <button class="delete-btn" onclick="deleteSpeaker('${speaker.name}')">删除</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // 更新下拉选项（只显示已训练的说话者）
+                    const trainedSpeakers = data.speakers.filter(s => s.trained);
+                    if (trainedSpeakers.length === 0) {
+                        speakerSelect.innerHTML = '<option value="">暂无已训练的说话者</option>';
+                    } else {
+                        speakerSelect.innerHTML = trainedSpeakers.map(speaker => 
+                            `<option value="${speaker.name}">${speaker.name} (${speaker.audio_count}个样本)</option>`
+                        ).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('加载说话者列表失败:', error);
+            }
+        }
+        
+        // 训练说话者模型
+        async function trainSpeaker(name) {
+            // 读取当前设置的训练参数
+            const epochs = parseInt(document.getElementById('epochsSlider').value);
+            const batchSize = parseInt(document.getElementById('batchSizeSlider').value);
+            
+            // 确认训练
+            const confirmed = confirm(
+                `确认开始训练？\n\n` +
+                `说话者：${name}\n` +
+                `训练轮数：${epochs}\n` +
+                `批次大小：${batchSize}\n\n` +
+                `点击"确定"开始训练`
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                // 更新UI显示训练中
+                const speakerItem = document.getElementById(`speaker-${name}`);
+                if (speakerItem) {
+                    const statusBadge = speakerItem.querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.className = 'status-badge status-training';
+                        statusBadge.textContent = '训练中...';
+                    }
+                    const trainBtn = speakerItem.querySelector('.train-btn');
+                    if (trainBtn) {
+                        trainBtn.disabled = true;
+                        trainBtn.textContent = '训练中...';
+                    }
+                }
+                
+                // 发起训练请求
+                const formData = new FormData();
+                formData.append('speaker_name', name);
+                formData.append('epochs', epochs.toString());
+                formData.append('batch_size', batchSize.toString());
+                
+                const response = await fetch('/train_speaker', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert(
+                        `训练已开始！\n\n` +
+                        `说话者: ${name}\n` +
+                        `音频数量: ${data.audio_count}\n` +
+                        `训练轮数: ${epochs}\n` +
+                        `批次大小: ${batchSize}\n` +
+                        `预计时间: ${data.estimated_time}\n\n` +
+                        `${data.note}`
+                    );
+                    
+                    // 开始轮询训练状态
+                    pollTrainingStatus(name);
+                } else {
+                    throw new Error(data.detail || '训练启动失败');
+                }
+            } catch (error) {
+                alert('训练失败: ' + error.message);
+                loadSpeakers(); // 刷新列表
+            }
+        }
+        
+        // 更新训练轮数显示
+        function updateEpochsValue(value) {
+            document.getElementById('epochsValue').textContent = value;
+        }
+        
+        // 更新批次大小显示
+        function updateBatchSizeValue(value) {
+            document.getElementById('batchSizeValue').textContent = value;
+        }
+        
+        // 轮询训练状态
+        async function pollTrainingStatus(name) {
+            const checkStatus = async () => {
+                try {
+                    const response = await fetch(`/training_status/${name}`);
+                    const data = await response.json();
+                    
+                    if (data.training_status.status === 'completed') {
+                        alert(`训练完成！\n\n说话者 "${name}" 的模型已训练完成，现在可以生成语音了。`);
+                        loadSpeakers();
+                        return;
+                    } else if (data.training_status.status === 'failed') {
+                        alert(`训练失败\n\n错误信息: ${data.training_status.error}`);
+                        loadSpeakers();
+                        return;
+                    } else if (data.training_status.status === 'training') {
+                        // 继续等待
+                        setTimeout(checkStatus, 10000); // 每10秒检查一次
+                    }
+                } catch (error) {
+                    console.error('查询训练状态失败:', error);
+                    setTimeout(checkStatus, 15000); // 出错后15秒重试
+                }
+            };
+            
+            checkStatus();
+        }
+        
+        // 删除说话者
+        async function deleteSpeaker(name) {
+            if (!confirm(`确定要删除说话者 "${name}" 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/delete_speaker/${name}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert(data.message);
+                    loadSpeakers();
+                } else {
+                    throw new Error(data.detail || '删除失败');
+                }
+            } catch (error) {
+                alert('错误: ' + error.message);
+            }
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('load', () => {
+            loadSpeakers();
+            // 初始化训练参数显示
+            updateEpochsValue(8);
+            updateBatchSizeValue(4);
+        });
+    </script>
+</body>
+</html>
+

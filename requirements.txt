@@ -1,0 +1,107 @@
+# ========================================
+# AI 音频生成系统 - GPT-SoVITS 完整依赖
+# ========================================
+# 
+# 本项目使用 GPT-SoVITS 进行高质量声音克隆
+# 支持从多个音频样本训练定制化的说话者模型
+#
+# 安装方法：
+#   推荐使用清华镜像（国内）：
+#   pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+#
+# 注意事项：
+#   - Python 3.12 (推荐) 或 3.11
+#   - 总下载量约 4-5 GB，预计耗时 15-30 分钟
+#   - 训练需要 GPU（6GB+ 显存推荐）
+#   - 关键版本已锁定以避免兼容性问题
+# ========================================
+
+# ===== Web 框架 =====
+fastapi[standard]>=0.115.2
+uvicorn==0.24.0
+python-multipart>=0.0.18
+
+# ===== 深度学习框架 =====
+torch>=2.1.0
+torchaudio>=2.1.0
+pytorch-lightning>=2.4
+
+# ===== Transformers 生态（关键版本！）=====
+transformers==4.44.2  # 必须！与 peft 0.12.0 兼容
+tokenizers==0.19.1    # 必须！与 transformers 4.44.2 兼容
+peft==0.12.0          # 必须！与 transformers 4.44.2 兼容
+sentencepiece==0.1.99
+huggingface_hub>=0.13
+
+# ===== 数值计算 =====
+numpy>=1.24.3,<2.0    # 必须 <2.0！兼容 torchmetrics
+scipy>=1.11.4
+numba
+
+# ===== 音频处理 =====
+librosa==0.10.2
+soundfile==0.12.1
+resampy==0.4.2
+audioread>=2.1.9
+ffmpeg-python
+av>=11
+torchcodec            # 音频/视频编解码（生成时必需）
+faster-whisper>=0.10.0  # ASR 自动语音识别（Whisper 模型）
+
+# ===== 数据处理 =====
+pandas>=2.0.3
+tqdm
+
+# ===== 可视化和监控 =====
+matplotlib>=3.7.2
+tensorboard
+gradio<5
+
+# ===== ASR（自动语音识别）=====
+funasr==1.0.27
+modelscope==1.10.0
+ctranslate2>=4.0,<5
+onnxruntime; platform_machine == "aarch64" or platform_machine == "arm64"
+onnxruntime-gpu; platform_machine == "x86_64" or platform_machine == "AMD64"
+
+# ===== 语言处理和多语言支持 =====
+# 中文
+jieba==0.42.1
+jieba_fast
+pypinyin==0.50.0
+cn2an==0.5.22
+opencc
+--no-binary=opencc
+
+# 英文
+g2p_en
+
+# 日文
+pyopenjtalk>=0.4.1
+
+# 韩文
+g2pk2
+ko_pron
+python_mecab_ko; sys_platform != 'win32'
+
+# 粤语
+ToJyutping
+
+# 通用
+fast-langdetect>=0.3.1
+split-lang
+wordsegment
+chardet
+
+# ===== 深度学习辅助 =====
+x_transformers
+rotary_embedding_torch
+torchmetrics<=1.5
+
+# ===== 系统工具 =====
+pydantic<=2.10.6
+pyyaml==6.0.1
+regex==2023.12.25
+protobuf==3.20.3
+psutil
+markupsafe~=2.0
